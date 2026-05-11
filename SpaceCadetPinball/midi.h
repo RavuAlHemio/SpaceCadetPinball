@@ -98,19 +98,19 @@ public:
 	static void music_shutdown();
 	static void music_play();
 	static void music_stop();
-	static void SetVolume(int volume);
+	static void SetVolume(float volume);
 	static bool play_track(MidiTracks track, bool replay);
 	static MidiTracks get_active_track();
 private:
-	static std::vector<Mix_Music*> LoadedTracks;
-	static Mix_Music* track1, * track2, * track3;
+	static std::vector<MIX_Track*> LoadedTracks;
+	static MIX_Track* track1, * track2, * track3;
 	static MidiTracks active_track, NextTrack;
-	static int Volume;
+	static float Volume;
 	static bool IsPlaying, MixOpen;
 
 	static void StopPlayback();
-	static Mix_Music* load_track(std::string fileName);
-	static Mix_Music* load_track_sub(std::string fileName, bool isMidi);
-	static Mix_Music* TrackToMidi(MidiTracks track);
+	static MIX_Track* load_track(std::string fileName);
+	static MIX_Track* load_track_sub(std::string fileName, bool isMidi);
+	static MIX_Track* TrackToMidi(MidiTracks track);
 	static std::vector<uint8_t>* MdsToMidi(std::string file);
 };

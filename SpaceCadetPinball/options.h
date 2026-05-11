@@ -44,13 +44,13 @@ enum class InputTypes
 struct GameInput
 {
 	InputTypes Type;
-	int Value;
+	unsigned int Value;
 
 	GameInput() : GameInput(InputTypes::None, -1)
 	{
 	}
 
-	GameInput(InputTypes type, int value) : Type(type), Value(value)
+	GameInput(InputTypes type, unsigned int value) : Type(type), Value(value)
 	{
 	}
 
@@ -101,8 +101,7 @@ public:
 	static constexpr int MaxUps = 360, MaxFps = MaxUps, MinUps = 60, MinFps = MinUps,
 	                     DefUps = 120, DefFps = 60;
 	// Original uses 8 sound channels
-	static constexpr int MaxSoundChannels = 32, MinSoundChannels = 1, DefSoundChannels = 8;
-	static constexpr int MaxVolume = MIX_MAX_VOLUME, MinVolume = 0, DefVolume = MaxVolume;
+	static constexpr float MaxVolume = 1.0f, MinVolume = 0.0f, DefVolume = MaxVolume;
 	static struct optionsStruct Options;
 	static std::vector<struct OptionBase*> AllOptions;
 
@@ -196,6 +195,7 @@ struct FloatOption : OptionBaseT<float>
 
 	void Load() override { V = options::get_float(Name, DefaultValue); }
 	void Save() const override { options::set_float(Name, V); }
+	using OptionBaseT::operator=;
 };
 
 struct BoolOption : OptionBaseT<bool>
@@ -269,12 +269,11 @@ struct optionsStruct
 	IntOption UpdatesPerSecond;
 	BoolOption ShowMenu;
 	BoolOption UncappedUpdatesPerSecond;
-	IntOption SoundChannels;
 	BoolOption HybridSleep;
 	BoolOption Prefer3DPBGameData;
 	BoolOption IntegerScaling;
-	IntOption SoundVolume;
-	IntOption MusicVolume;
+	FloatOption SoundVolume;
+	FloatOption MusicVolume;
 	BoolOption SoundStereo;
 	BoolOption DebugOverlay;
 	BoolOption DebugOverlayGrid;

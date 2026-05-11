@@ -1,14 +1,15 @@
 #include "pch.h"
+#include "audio.h"
 #include "midi.h"
 
 
 #include "pb.h"
 
 
-std::vector<Mix_Music*> midi::LoadedTracks{};
-Mix_Music* midi::track1, * midi::track2, * midi::track3;
+std::vector<MIX_Track*> midi::LoadedTracks{};
+MIX_Track* midi::track1, * midi::track2, * midi::track3;
 MidiTracks midi::active_track, midi::NextTrack;
-int midi::Volume = MIX_MAX_VOLUME;
+float midi::Volume = 1.0f;
 bool midi::IsPlaying = false, midi::MixOpen = false;
 
 constexpr uint32_t FOURCC(uint8_t a, uint8_t b, uint8_t c, uint8_t d)
@@ -56,7 +57,7 @@ void midi::StopPlayback()
 	if (active_track != MidiTracks::None)
 	{
 		if (MixOpen)
-			Mix_HaltMusic();
+			MIX_StopTag(audio::globalMixer, audio::TAG_MUSIC, 0);
 		active_track = MidiTracks::None;
 	}
 }
@@ -95,20 +96,20 @@ void midi::music_shutdown()
 
 	for (auto midi : LoadedTracks)
 	{
-		Mix_FreeMusic(midi);
+		MIX_DestroyTrack(midi);
 	}
 	active_track = MidiTracks::None;
 	LoadedTracks.clear();
 }
 
-void midi::SetVolume(int volume)
+void midi::SetVolume(float volume)
 {
 	Volume = volume;
 	if (MixOpen)
-		Mix_VolumeMusic(volume);
+		MIX_SetTagGain(audio::globalMixer, audio::TAG_MUSIC, volume);
 }
 
-Mix_Music* midi::load_track(std::string fileName)
+MIX_Track* midi::load_track(std::string fileName)
 {
 	if (!MixOpen || pb::quickFlag)
 		return nullptr;
@@ -131,11 +132,11 @@ Mix_Music* midi::load_track(std::string fileName)
 	return audio;
 }
 
-Mix_Music* midi::load_track_sub(std::string fileName, bool isMidi)
+MIX_Track* midi::load_track_sub(std::string fileName, bool isMidi)
 {
 	// FT has music in two formats, depending on game version: MIDI in 16bit, MIDS in 32bit.
 	// 3DPB music is MIDI only.
-	Mix_Music* audio = nullptr;
+	MIX_Audio* audio = nullptr;
 	fileName += isMidi ? ".MID" : ".MDS";
 	for (int i = 0; i < 2; i++)
 	{
@@ -149,8 +150,8 @@ Mix_Music* midi::load_track_sub(std::string fileName, bool isMidi)
 			if (fileHandle)
 			{
 				fclose(fileHandle);
-				auto rw = SDL_RWFromFile(filePath.c_str(), "rb");
-				audio = Mix_LoadMUS_RW(rw, 1);
+				auto rw = SDL_IOFromFile(filePath.c_str(), "rb");
+				audio = MIX_LoadAudio_IO(audio::globalMixer, rw, true, true);
 				break;
 			}
 		}
@@ -165,15 +166,17 @@ Mix_Music* midi::load_track_sub(std::string fileName, bool isMidi)
 				fwrite(midi->data(), 1, midi->size(), fileHandle);
 				fclose(fileHandle);*/
 
-				auto rw = SDL_RWFromMem(midi->data(), static_cast<int>(midi->size()));
-				audio = Mix_LoadMUS_RW(rw, 1); // This call seems to leak memory no matter what.
+				auto rw = SDL_IOFromMem(midi->data(), static_cast<int>(midi->size()));
+				audio = MIX_LoadAudio_IO(audio::globalMixer, rw, true, true);
 				delete midi;
 				break;
 			}
 		}
 	}
 
-	return audio;
+	MIX_Track* track = MIX_CreateTrack(audio::globalMixer);
+	MIX_SetTrackAudio(track, audio);
+	return track;
 }
 
 bool midi::play_track(MidiTracks track, bool replay)
@@ -190,7 +193,7 @@ bool midi::play_track(MidiTracks track, bool replay)
 		return false;
 	}
 
-	if (MixOpen && Mix_PlayMusic(midi, -1))
+	if (MixOpen && !MIX_PlayTag(audio::globalMixer, audio::TAG_MUSIC, 0))
 	{
 		active_track = MidiTracks::None;
 		return false;
@@ -211,9 +214,9 @@ MidiTracks midi::get_active_track()
 		return active_track;
 }
 
-Mix_Music* midi::TrackToMidi(MidiTracks track)
+MIX_Track* midi::TrackToMidi(MidiTracks track)
 {
-	Mix_Music* midi;
+	MIX_Track* midi;
 	switch (track)
 	{
 	default:

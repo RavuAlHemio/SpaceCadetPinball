@@ -190,16 +190,16 @@ namespace
 		{
 			Clip = rect;
 			const SDL_Rect clip = { rect.X, rect.Y, rect.Width, rect.Height };
-			SDL_RenderSetClipRect(Renderer, &clip);
+			SDL_SetRenderClipRect(Renderer, &clip);
 		}
 
 		void EnableClip() { SetClipRect(Clip); }
-		void DisableClip() { SDL_RenderSetClipRect(Renderer, nullptr); }
+		void DisableClip() { SDL_SetRenderClipRect(Renderer, nullptr); }
 
 		void SetAt(int x, int y, const Color& color)
 		{
 			color.UseAsDrawColor(Renderer);
-			SDL_RenderDrawPoint(Renderer, x, y);
+			SDL_RenderPoint(Renderer, x, y);
 		}
 
 		SDL_Texture* MakeTexture(int width, int height)
@@ -227,7 +227,7 @@ namespace
 
 		~Texture()
 		{
-			SDL_FreeSurface(Surface);
+			SDL_DestroySurface(Surface);
 			SDL_DestroyTexture(Source);
 		}
 
@@ -402,8 +402,8 @@ namespace
 
 	void DrawCachedTriangle(const Device::TriangleCacheItem& triangle, const FixedPointTriangleRenderInfo& renderInfo)
 	{
-		const SDL_Rect destination = { renderInfo.MinX, renderInfo.MinY, triangle.Width, triangle.Height };
-		SDL_RenderCopy(CurrentDevice->Renderer, triangle.Texture, nullptr, &destination);
+		const SDL_FRect destination = { static_cast<float>(renderInfo.MinX), static_cast<float>(renderInfo.MinY), static_cast<float>(triangle.Width), static_cast<float>(triangle.Height) };
+		SDL_RenderTexture(CurrentDevice->Renderer, triangle.Texture, nullptr, &destination);
 	}
 
 	void DrawTriangle(const ImDrawVert& v1, const ImDrawVert& v2, const ImDrawVert& v3, const Texture* texture)
@@ -443,8 +443,8 @@ namespace
 
 		if (!cached->Texture) return;
 
-		const SDL_Rect destination = { renderInfo.MinX, renderInfo.MinY, cached->Width, cached->Height };
-		SDL_RenderCopy(CurrentDevice->Renderer, cached->Texture, nullptr, &destination);
+		const SDL_FRect destination = { static_cast<float>(renderInfo.MinX), static_cast<float>(renderInfo.MinY), static_cast<float>(cached->Width), static_cast<float>(cached->Height) };
+		SDL_RenderTexture(CurrentDevice->Renderer, cached->Texture, nullptr, &destination);
 
 		CurrentDevice->GenericTriangleCache.Insert(key, std::move(cached));
 	}
@@ -473,8 +473,8 @@ namespace
 
 		if (!cached->Texture) return;
 
-		const SDL_Rect destination = { renderInfo.MinX, renderInfo.MinY, cached->Width, cached->Height };
-		SDL_RenderCopy(CurrentDevice->Renderer, cached->Texture, nullptr, &destination);
+		const SDL_FRect destination = { static_cast<float>(renderInfo.MinX), static_cast<float>(renderInfo.MinY), static_cast<float>(cached->Width), static_cast<float>(cached->Height) };
+		SDL_RenderTexture(CurrentDevice->Renderer, cached->Texture, nullptr, &destination);
 
 		CurrentDevice->UniformColorTriangleCache.Insert(key, std::move(cached));
 	}
@@ -483,11 +483,11 @@ namespace
 	{
 		// We are safe to assume uniform color here, because the caller checks it and and uses the triangle renderer to render those.
 
-		const SDL_Rect destination = {
-			static_cast<int>(bounding.MinX),
-			static_cast<int>(bounding.MinY),
-			static_cast<int>(bounding.MaxX - bounding.MinX),
-			static_cast<int>(bounding.MaxY - bounding.MinY)
+		const SDL_FRect destination = {
+			bounding.MinX,
+			bounding.MinY,
+			bounding.MaxX - bounding.MinX,
+			bounding.MaxY - bounding.MinY
 		};
 
 		// If the area isn't textured, we can just draw a rectangle with the correct color.
@@ -500,17 +500,17 @@ namespace
 		{
 			// We can now just calculate the correct source rectangle and draw it.
 
-			const SDL_Rect source = {
-				static_cast<int>(bounding.MinU * textureWidth),
-				static_cast<int>(bounding.MinV * textureHeight),
-				static_cast<int>((bounding.MaxU - bounding.MinU) * textureWidth),
-				static_cast<int>((bounding.MaxV - bounding.MinV) * textureHeight)
+			const SDL_FRect source = {
+				bounding.MinU * textureWidth,
+				bounding.MinV * textureHeight,
+				(bounding.MaxU - bounding.MinU) * textureWidth,
+				(bounding.MaxV - bounding.MinV) * textureHeight
 			};
 
-			const SDL_RendererFlip flip = static_cast<SDL_RendererFlip>((doHorizontalFlip ? SDL_FLIP_HORIZONTAL : 0) | (doVerticalFlip ? SDL_FLIP_VERTICAL : 0));
+			const SDL_FlipMode flip = static_cast<SDL_FlipMode>((doHorizontalFlip ? SDL_FLIP_HORIZONTAL : 0) | (doVerticalFlip ? SDL_FLIP_VERTICAL : 0));
 
 			SDL_SetTextureColorMod(texture, static_cast<uint8_t>(color.R * 255), static_cast<uint8_t>(color.G * 255), static_cast<uint8_t>(color.B * 255));
-			SDL_RenderCopyEx(CurrentDevice->Renderer, texture, &source, &destination, 0.0, nullptr, flip);
+			SDL_RenderTextureRotated(CurrentDevice->Renderer, texture, &source, &destination, 0.0, nullptr, flip);
 		}
 	}
 
@@ -521,16 +521,16 @@ namespace
 
 	void DrawRectangle(const Rect& bounding, SDL_Texture* texture, const Color& color, bool doHorizontalFlip, bool doVerticalFlip)
 	{
-		int width, height;
-		SDL_QueryTexture(texture, nullptr, nullptr, &width, &height);
+		float width, height;
+		SDL_GetTextureSize(texture, &width, &height);
 		DrawRectangle(bounding, texture, width, height, color, doHorizontalFlip, doVerticalFlip);
 	}
 }
 
 namespace ImGuiSDL
 {
-	static int ImGuiSDLEventWatch(void* userdata, SDL_Event* event) {
-		if (event->type == SDL_RENDER_TARGETS_RESET) {
+	static bool ImGuiSDLEventWatch(void* userdata, SDL_Event* event) {
+		if (event->type == SDL_EVENT_RENDER_TARGETS_RESET) {
 			// Device lost event, applies to DirectX and some mobile devices.
 			CurrentDevice->CacheWasInvalidated = true;
 		}
@@ -558,7 +558,7 @@ namespace ImGuiSDL
 		int width, height;
 		io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
 		static constexpr uint32_t rmask = 0x000000ff, gmask = 0x0000ff00, bmask = 0x00ff0000, amask = 0xff000000;
-		SDL_Surface* surface = SDL_CreateRGBSurfaceFrom(pixels, width, height, 32, 4 * width, rmask, gmask, bmask, amask);
+		SDL_Surface* surface = SDL_CreateSurfaceFrom(width, height, SDL_PIXELFORMAT_ARGB32, pixels, 4 * width);
 
 		Texture* texture = new Texture();
 		texture->Surface = surface;
@@ -573,11 +573,11 @@ namespace ImGuiSDL
 	{
 		// Frees up the memory of the font texture.
 		ImGuiIO& io = ImGui::GetIO();
-		Texture* texture = static_cast<Texture*>(io.Fonts->TexID);
+		Texture* texture = reinterpret_cast<Texture*>(io.Fonts->TexID.GetTexID());
 		delete texture;
 
 		delete CurrentDevice;
-		SDL_DelEventWatch(ImGuiSDLEventWatch, nullptr);
+		SDL_RemoveEventWatch(ImGuiSDLEventWatch, nullptr);
 	}
 
 	void Render(ImDrawData* drawData)
@@ -595,9 +595,9 @@ namespace ImGuiSDL
 		Uint8 initialR, initialG, initialB, initialA;
 		SDL_GetRenderDrawColor(CurrentDevice->Renderer, &initialR, &initialG, &initialB, &initialA);
 
-		SDL_bool initialClipEnabled = SDL_RenderIsClipEnabled(CurrentDevice->Renderer);
+		bool initialClipEnabled = SDL_RenderClipEnabled(CurrentDevice->Renderer);
 		SDL_Rect initialClipRect;
-		SDL_RenderGetClipRect(CurrentDevice->Renderer, &initialClipRect);
+		SDL_GetRenderClipRect(CurrentDevice->Renderer, &initialClipRect);
 
 		SDL_Texture* initialRenderTarget = SDL_GetRenderTarget(CurrentDevice->Renderer);
 
@@ -627,7 +627,7 @@ namespace ImGuiSDL
 				}
 				else
 				{
-					const bool isWrappedTexture = drawCommand->TextureId == io.Fonts->TexID;
+					const bool isWrappedTexture = drawCommand->TexRef.GetTexID() == io.Fonts->TexID.GetTexID();
 
 					// Loops over triangles.
 					for (unsigned int i = 0; i + 3 <= drawCommand->ElemCount; i += 3)
@@ -669,11 +669,11 @@ namespace ImGuiSDL
 
 								if (isWrappedTexture)
 								{
-									DrawRectangle(bounding, static_cast<const Texture*>(drawCommand->TextureId), Color(v0.col), doHorizontalFlip, doVerticalFlip);
+									DrawRectangle(bounding, reinterpret_cast<const Texture*>(drawCommand->TexRef.GetTexID()), Color(v0.col), doHorizontalFlip, doVerticalFlip);
 								}
 								else
 								{
-									DrawRectangle(bounding, static_cast<SDL_Texture*>(drawCommand->TextureId), Color(v0.col), doHorizontalFlip, doVerticalFlip);
+									DrawRectangle(bounding, reinterpret_cast<SDL_Texture*>(drawCommand->TexRef.GetTexID()), Color(v0.col), doHorizontalFlip, doVerticalFlip);
 								}
 
 								i += 3;  // Additional increment to account for the extra 3 vertices we consumed.
@@ -689,7 +689,7 @@ namespace ImGuiSDL
 						{
 							// Currently we assume that any non rectangular texture samples the font texture. Dunno if that's what actually happens, but it seems to work.
 							assert(isWrappedTexture);
-							DrawTriangle(v0, v1, v2, static_cast<const Texture*>(drawCommand->TextureId));
+							DrawTriangle(v0, v1, v2, reinterpret_cast<const Texture*>(drawCommand->TexRef.GetTexID()));
 						}
 					}
 				}
@@ -700,7 +700,7 @@ namespace ImGuiSDL
 
 		SDL_SetRenderTarget(CurrentDevice->Renderer, initialRenderTarget);
 
-		SDL_RenderSetClipRect(CurrentDevice->Renderer, initialClipEnabled ? &initialClipRect : nullptr);
+		SDL_SetRenderClipRect(CurrentDevice->Renderer, initialClipEnabled ? &initialClipRect : nullptr);
 
 		SDL_SetRenderDrawColor(CurrentDevice->Renderer,
 			initialR, initialG, initialB, initialA);

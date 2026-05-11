@@ -17,7 +17,7 @@ int render::zmap_offsetX, render::zmap_offsetY, render::offset_x, render::offset
 rectangle_type render::vscreen_rect;
 gdrv_bitmap8 *render::vscreen, *render::background_bitmap, *render::ball_bitmap[20];
 zmap_header_type* render::zscreen;
-SDL_Rect render::DestinationRect{};
+SDL_FRect render::DestinationRect{};
 
 render_sprite::render_sprite(VisualTypes visualType, gdrv_bitmap8* bmp, zmap_header_type* zMap,
 	int xPosition, int yPosition, rectangle_type* boundingRect)
@@ -458,25 +458,24 @@ void render::PresentVScreen()
 
 	if (offset_x == 0 && offset_y == 0)
 	{
-		SDL_RenderCopy(winmain::Renderer, vscreen->Texture, nullptr, &DestinationRect);
+		SDL_RenderTexture(winmain::Renderer, vscreen->Texture, nullptr, &DestinationRect);
 	}
 	else
 	{
 		auto tableWidthCoef = static_cast<float>(pb::MainTable->Width) / vscreen->Width;
 		auto srcSeparationX = static_cast<int>(round(vscreen->Width * tableWidthCoef));
-		auto srcBoardRect = SDL_Rect
+		auto srcBoardRect = SDL_FRect
 		{
 			0, 0,
 			srcSeparationX, vscreen->Height
 		};
-		auto srcSidebarRect = SDL_Rect
+		auto srcSidebarRect = SDL_FRect
 		{
 			srcSeparationX, 0,
 			vscreen->Width - srcSeparationX, vscreen->Height
 		};
 
-#if SDL_VERSION_ATLEAST(2, 0, 10)
-		// SDL_RenderCopyF was added in 2.0.10
+		// SDL_RenderTextureF was added in 2.0.10
 		auto dstSeparationX = DestinationRect.w * tableWidthCoef;
 		auto dstBoardRect = SDL_FRect
 		{
@@ -490,33 +489,8 @@ void render::PresentVScreen()
 			DestinationRect.w - dstSeparationX, static_cast<float>(DestinationRect.h)
 		};
 
-		SDL_RenderCopyF(winmain::Renderer, vscreen->Texture, &srcBoardRect, &dstBoardRect);
-		SDL_RenderCopyF(winmain::Renderer, vscreen->Texture, &srcSidebarRect, &dstSidebarRect);
-#else
-		// SDL_RenderCopy cannot express sub pixel offset.
-		// Vscreen shift is required for that.
-		auto dstSeparationX = static_cast<int>(DestinationRect.w * tableWidthCoef);
-		auto scaledOffX = static_cast<int>(round(offset_x * fullscrn::ScaleX));
-		if (offset_x != 0 && scaledOffX == 0)
-			scaledOffX = Sign(offset_x);
-		auto scaledOffY = static_cast<int>(round(offset_y * fullscrn::ScaleY));
-		if (offset_y != 0 && scaledOffX == 0)
-			scaledOffY = Sign(offset_y);
-
-		auto dstBoardRect = SDL_Rect
-		{
-			DestinationRect.x + scaledOffX, DestinationRect.y + scaledOffY,
-			dstSeparationX, DestinationRect.h
-		};
-		auto dstSidebarRect = SDL_Rect
-		{
-			DestinationRect.x + dstSeparationX, DestinationRect.y,
-			DestinationRect.w - dstSeparationX, DestinationRect.h
-		};
-
-		SDL_RenderCopy(winmain::Renderer, vscreen->Texture, &srcBoardRect, &dstBoardRect);
-		SDL_RenderCopy(winmain::Renderer, vscreen->Texture, &srcSidebarRect, &dstSidebarRect);
-#endif
+		SDL_RenderTexture(winmain::Renderer, vscreen->Texture, &srcBoardRect, &dstBoardRect);
+		SDL_RenderTexture(winmain::Renderer, vscreen->Texture, &srcSidebarRect, &dstSidebarRect);
 	}
 
 	if (options::Options.DebugOverlay)

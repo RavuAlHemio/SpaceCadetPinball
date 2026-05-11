@@ -40,10 +40,14 @@ endforeach()
 
 
 set(SOURCE_FILES
+        SpaceCadetPinball/audio.cpp
+        SpaceCadetPinball/audio.h
         SpaceCadetPinball/control.cpp
         SpaceCadetPinball/control.h
         SpaceCadetPinball/EmbeddedData.cpp
         SpaceCadetPinball/EmbeddedData.h
+        SpaceCadetPinball/extended_imgui_draw.cpp
+        SpaceCadetPinball/extended_imgui_draw.h
         SpaceCadetPinball/font_selection.cpp
         SpaceCadetPinball/font_selection.h
         SpaceCadetPinball/fullscrn.cpp
@@ -169,7 +173,6 @@ set(SOURCE_FILES
         SpaceCadetPinball/imgui.h
         SpaceCadetPinball/imgui_sdl.cpp
         SpaceCadetPinball/imgui_sdl.h
-        SpaceCadetPinball/imgui_draw.cpp
         SpaceCadetPinball/imgui_widgets.cpp
         SpaceCadetPinball/imgui_tables.cpp
         SpaceCadetPinball/imgui_demo.cpp
@@ -194,9 +197,9 @@ add_executable(SpaceCadetPinball ${SOURCE_FILES})
 
 # Skip pch on foreign code
 set_source_files_properties(
+        SpaceCadetPinball/extended_imgui_draw.cpp
         SpaceCadetPinball/imgui.cpp
         SpaceCadetPinball/imgui_sdl.cpp
-        SpaceCadetPinball/imgui_draw.cpp
         SpaceCadetPinball/imgui_widgets.cpp
         SpaceCadetPinball/imgui_tables.cpp
         SpaceCadetPinball/imgui_demo.cpp

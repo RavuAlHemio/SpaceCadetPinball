@@ -3,6 +3,7 @@
 #include "GroupData.h"
 
 #include "EmbeddedData.h"
+#include "extended_imgui_draw.h"
 #include "fullscrn.h"
 #include "gdrv.h"
 #include "pb.h"
@@ -288,7 +289,7 @@ void DatFile::Finalize()
 		assertm(groupIndex < 0, "DatFile: pbmsg_ft is already in .dat");
 
 		// Load 3DPB font into dat to simplify pipeline
-		auto rcData = reinterpret_cast<MsgFont*>(ImFontAtlas::DecompressCompressedBase85Data(
+		auto rcData = reinterpret_cast<MsgFont*>(DecompressCompressedBase85Data(
 			EmbeddedData::PB_MSGFT_bin_compressed_data_base85));
 		AddMsgFont(rcData, "pbmsg_ft");
 		IM_FREE(rcData);

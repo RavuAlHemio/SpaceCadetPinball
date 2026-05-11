@@ -104,7 +104,7 @@ void loader::unload()
 {
 	for (int index = 1; index < sound_count; ++index)
 	{
-		Sound::FreeSound(sound_list[index].WavePtr);
+		Sound::FreeSound(sound_list[index].TrackPtr);
 		sound_list[index] = {};
 	}
 
@@ -130,7 +130,7 @@ int loader::get_sound_id(int groupIndex)
 		}
 	}
 
-	if (!sound_list[soundIndex].Loaded && !sound_list[soundIndex].WavePtr)
+	if (!sound_list[soundIndex].Loaded && !sound_list[soundIndex].TrackPtr)
 	{
 		WaveHeader wavHeader{};
 
@@ -173,7 +173,7 @@ int loader::get_sound_id(int groupIndex)
 				}
 
 				sound_list[soundIndex].Duration = duration;
-				sound_list[soundIndex].WavePtr = Sound::LoadWaveFile(filePath);
+				sound_list[soundIndex].TrackPtr = Sound::LoadWaveFile(filePath);
 			}
 		}
 	}
@@ -336,7 +336,7 @@ float loader::play_sound(int soundIndex, TPinballComponent *soundSource, const c
 {
 	if (soundIndex <= 0)
 		return 0.0;
-	Sound::PlaySound(sound_list[soundIndex].WavePtr, pb::time_ticks, soundSource, info);
+	Sound::PlaySound(sound_list[soundIndex].TrackPtr, pb::time_ticks, soundSource, info);
 	return sound_list[soundIndex].Duration;
 }
 

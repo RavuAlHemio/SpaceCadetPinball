@@ -15,7 +15,7 @@ struct errorMsg
 
 struct soundListStruct
 {
-	Mix_Chunk* WavePtr;
+	MIX_Track* TrackPtr;
 	int GroupIndex;
 	int Loaded;
 	float Duration;

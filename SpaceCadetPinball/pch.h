@@ -37,37 +37,17 @@
 #include "SDL3/SDL.h"
 #include <SDL3_mixer/SDL_mixer.h>
 
-// MIX_INIT_FLUIDSYNTH was renamed to MIX_INIT_MID in SDL_mixer v2.0.2
-// Older versions of SDL_mixer did not have SDL_MIXER_VERSION_ATLEAST
-constexpr int MIX_INIT_MID_Proxy =
-#if SDL_VERSIONNUM(SDL_MIXER_MAJOR_VERSION, SDL_MIXER_MINOR_VERSION, SDL_MIXER_PATCHLEVEL) >= SDL_VERSIONNUM(2, 0, 2)
-	MIX_INIT_MID;
-#else
-	MIX_INIT_FLUIDSYNTH;
-#endif
-
 //https://github.com/ocornut/imgui 59b63defe5421642fb0cdcfd1fa850fc85a13791 + patches
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "imgui_impl_sdl3.h"
 
-// imgui_impl_sdlrenderer is faster and more accurate, but it requires newer SDL.
-#if SDL_VERSION_ATLEAST(2, 0, 17)
 #include "imgui_impl_sdlrenderer3.h"
 constexpr const char* ImGuiRender = "HW";
-inline void ImGui_Render_Init(SDL_Renderer* renderer) { ImGui_ImplSDLRenderer_Init(renderer); }
-inline void ImGui_Render_Shutdown() { ImGui_ImplSDLRenderer_Shutdown(); }
-inline void ImGui_Render_NewFrame() { ImGui_ImplSDLRenderer_NewFrame(); }
-inline void ImGui_Render_RenderDrawData(ImDrawData* draw_data) { ImGui_ImplSDLRenderer_RenderDrawData(draw_data); }
-#else
-//https://github.com/Tyyppi77/imgui_sdl 01deb04b102b6a1c15c7fdec1977a2c96a885e6f + patches
-#include "imgui_sdl.h"
-constexpr const char* ImGuiRender = "SW";
-inline void ImGui_Render_Init(SDL_Renderer* renderer) { ImGuiSDL::Initialize(renderer, 0, 0); }
-inline void ImGui_Render_Shutdown() { ImGuiSDL::Deinitialize(); }
-inline void ImGui_Render_NewFrame() { }
-inline void ImGui_Render_RenderDrawData(ImDrawData* draw_data) { ImGuiSDL::Render(draw_data); }
-#endif
+inline void ImGui_Render_Init(SDL_Renderer* renderer) { ImGui_ImplSDLRenderer3_Init(renderer); }
+inline void ImGui_Render_Shutdown() { ImGui_ImplSDLRenderer3_Shutdown(); }
+inline void ImGui_Render_NewFrame() { ImGui_ImplSDLRenderer3_NewFrame(); }
+inline void ImGui_Render_RenderDrawData(ImDrawData* draw_data, SDL_Renderer *renderer) { ImGui_ImplSDLRenderer3_RenderDrawData(draw_data, renderer); }
 
 
 typedef char* LPSTR;

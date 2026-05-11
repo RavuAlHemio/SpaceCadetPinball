@@ -10,8 +10,8 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/CMakeModules")
 
 # On Windows, set paths to SDL-devel packages here
 if(WIN32)
-   list(APPEND SDL2_PATH "${CMAKE_CURRENT_LIST_DIR}/Libs/SDL2")
-   list(APPEND SDL2_MIXER_PATH "${CMAKE_CURRENT_LIST_DIR}/Libs/SDL2_mixer")
+   list(APPEND SDL3_PATH "${CMAKE_CURRENT_LIST_DIR}/Libs/SDL3")
+   list(APPEND SDL3_MIXER_PATH "${CMAKE_CURRENT_LIST_DIR}/Libs/SDL3_mixer")
 endif()
 
 # Link mingw libs static
@@ -25,17 +25,13 @@ if(APPLE)
     set(CMAKE_INSTALL_RPATH "@executable_path/../Frameworks")
     set(CMAKE_OSX_DEPLOYMENT_TARGET "10.11")
     set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64")
-    list(APPEND SDL2_PATH "${CMAKE_CURRENT_LIST_DIR}/Libs")
-    list(APPEND SDL2_MIXER_PATH "${CMAKE_CURRENT_LIST_DIR}/Libs")
+    list(APPEND SDL3_PATH "${CMAKE_CURRENT_LIST_DIR}/Libs")
+    list(APPEND SDL3_MIXER_PATH "${CMAKE_CURRENT_LIST_DIR}/Libs")
 endif()
 
-# SDL2main is not needed
-set(SDL2_BUILDING_LIBRARY ON)
+find_package(SDL3 REQUIRED)
+FIND_PACKAGE(SDL3_mixer REQUIRED)
 
-find_package(SDL2 REQUIRED)
-FIND_PACKAGE(SDL2_mixer REQUIRED)
-
-include_directories(${SDL2_INCLUDE_DIR} ${SDL2_MIXER_INCLUDE_DIR})
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
 foreach(dir ${dirs})
   message(STATUS "Include dir='${dir}'")
@@ -216,22 +212,22 @@ if(${CMAKE_VERSION} VERSION_GREATER "3.16.0" OR ${CMAKE_VERSION} VERSION_EQUAL "
             )
 endif()
 
-target_link_libraries(SpaceCadetPinball ${SDL2_LIBRARY} ${SDL2_MIXER_LIBRARY})
+target_link_libraries(SpaceCadetPinball SDL3::SDL3 SDL3_mixer::SDL3_mixer)
 
 # On Windows, copy DLL to output
 if(WIN32)
-    list(GET SDL2_LIBRARY -1 SDL2_DLL_PATH)
-    list(GET SDL2_MIXER_LIBRARY -1 SDL2_MIXER_DLL_PATH)
-    get_filename_component(SDL2_DLL_PATH ${SDL2_DLL_PATH} DIRECTORY)
-    get_filename_component(SDL2_MIXER_DLL_PATH ${SDL2_MIXER_DLL_PATH} DIRECTORY)
+    list(GET SDL3_LIBRARY -1 SDL3_DLL_PATH)
+    list(GET SDL3_MIXER_LIBRARY -1 SDL3_MIXER_DLL_PATH)
+    get_filename_component(SDL3_DLL_PATH ${SDL3_DLL_PATH} DIRECTORY)
+    get_filename_component(SDL3_MIXER_DLL_PATH ${SDL3_MIXER_DLL_PATH} DIRECTORY)
     if(MINGW)
-        string(REGEX REPLACE "lib$" "bin" SDL2_DLL_PATH ${SDL2_DLL_PATH})
-        string(REGEX REPLACE "lib$" "bin" SDL2_MIXER_DLL_PATH ${SDL2_MIXER_DLL_PATH})
+        string(REGEX REPLACE "lib$" "bin" SDL3_DLL_PATH ${SDL3_DLL_PATH})
+        string(REGEX REPLACE "lib$" "bin" SDL3_MIXER_DLL_PATH ${SDL3_MIXER_DLL_PATH})
     endif()
-    message(STATUS "copy paths='${SDL2_DLL_PATH}' '${SDL2_MIXER_DLL_PATH}'") 
+    message(STATUS "copy paths='${SDL3_DLL_PATH}' '${SDL3_MIXER_DLL_PATH}'") 
     add_custom_command(TARGET SpaceCadetPinball POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SDL2_DLL_PATH}/SDL2.dll" $<TARGET_FILE_DIR:SpaceCadetPinball>
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SDL2_MIXER_DLL_PATH}/SDL2_mixer.dll" $<TARGET_FILE_DIR:SpaceCadetPinball>
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SDL3_DLL_PATH}/SDL3.dll" $<TARGET_FILE_DIR:SpaceCadetPinball>
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SDL3_MIXER_DLL_PATH}/SDL3_mixer.dll" $<TARGET_FILE_DIR:SpaceCadetPinball>
         )
 endif()
 

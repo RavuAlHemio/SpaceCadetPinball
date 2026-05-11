@@ -134,7 +134,7 @@ void gdrv_bitmap8::CreateTexture(const char* scaleHint, SDL_TextureAccess access
 	(
 		winmain::Renderer,
 		SDL_PIXELFORMAT_BGRA32,
-		SDL_TEXTUREACCESS_TARGET,
+		access,
 		Width, Height
 	);
 	SDL_SetTextureScaleMode(Texture, SDL_SCALEMODE_NEAREST);
@@ -146,14 +146,14 @@ void gdrv_bitmap8::BlitToTexture()
 	assertm(Texture, "Updating null texture");
 	int pitch = 0;
 	ColorRgba* lockedPixels;
-	auto result = SDL_LockTexture
+	auto lockSucceeded = SDL_LockTexture
 	(
 		Texture,
 		nullptr,
 		reinterpret_cast<void**>(&lockedPixels),
 		&pitch
 	);
-	assertm(result == 0, "Updating non-streaming texture");
+	assertm(lockSucceeded, "Updating non-streaming texture");
 	assertm(static_cast<unsigned>(pitch) == Width * sizeof(ColorRgba), "Padding on vScreen texture");
 
 	std::memcpy(lockedPixels, BmpBufPtr1, Width * Height * sizeof(ColorRgba));

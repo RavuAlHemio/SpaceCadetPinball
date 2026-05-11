@@ -107,6 +107,7 @@ private:
 	static MidiTracks active_track, NextTrack;
 	static float Volume;
 	static bool IsPlaying, MixOpen;
+	static SDL_PropertiesID InfiniteRepeatProperties;
 
 	static void StopPlayback();
 	static MIX_Track* load_track(std::string fileName);

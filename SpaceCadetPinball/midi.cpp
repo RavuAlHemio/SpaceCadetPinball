@@ -11,6 +11,7 @@ MIX_Track* midi::track1, * midi::track2, * midi::track3;
 MidiTracks midi::active_track, midi::NextTrack;
 float midi::Volume = 1.0f;
 bool midi::IsPlaying = false, midi::MixOpen = false;
+SDL_PropertiesID midi::InfiniteRepeatProperties = 0;
 
 constexpr uint32_t FOURCC(uint8_t a, uint8_t b, uint8_t c, uint8_t d)
 {
@@ -56,8 +57,9 @@ void midi::StopPlayback()
 {
 	if (active_track != MidiTracks::None)
 	{
+		auto thisMidi = TrackToMidi(active_track);
 		if (MixOpen)
-			MIX_StopTag(audio::globalMixer, audio::TAG_MUSIC, 0);
+			MIX_StopTrack(thisMidi, 0);
 		active_track = MidiTracks::None;
 	}
 }
@@ -86,6 +88,9 @@ int midi::music_init(bool mixOpen, int volume)
 		// 3DPB has only one music track. PINBALL2.MID is a bitmap font, in the same format as PB_MSGFT.bin
 		track1 = load_track("PINBALL");
 	}
+
+	InfiniteRepeatProperties = SDL_CreateProperties();
+	SDL_SetNumberProperty(InfiniteRepeatProperties, MIX_PROP_PLAY_LOOPS_NUMBER, -1);
 
 	return track1 != nullptr;
 }
@@ -193,7 +198,7 @@ bool midi::play_track(MidiTracks track, bool replay)
 		return false;
 	}
 
-	if (MixOpen && !MIX_PlayTag(audio::globalMixer, audio::TAG_MUSIC, 0))
+	if (MixOpen && !MIX_PlayTrack(midi, InfiniteRepeatProperties))
 	{
 		active_track = MidiTracks::None;
 		return false;

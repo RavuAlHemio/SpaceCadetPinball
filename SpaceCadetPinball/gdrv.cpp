@@ -123,7 +123,7 @@ void gdrv_bitmap8::ScaleIndexed(float scaleX, float scaleY)
 	BmpBufPtr1 = new ColorRgba[Stride * Height];
 }
 
-void gdrv_bitmap8::CreateTexture(const char* scaleHint, SDL_TextureAccess access)
+void gdrv_bitmap8::CreateTexture(SDL_ScaleMode scaleMode, SDL_TextureAccess access)
 {
 	if (Texture != nullptr)
 	{
@@ -137,7 +137,7 @@ void gdrv_bitmap8::CreateTexture(const char* scaleHint, SDL_TextureAccess access
 		access,
 		Width, Height
 	);
-	SDL_SetTextureScaleMode(Texture, SDL_SCALEMODE_NEAREST);
+	SDL_SetTextureScaleMode(Texture, scaleMode);
 	SDL_SetTextureBlendMode(Texture, SDL_BLENDMODE_NONE);
 }
 
@@ -306,6 +306,6 @@ void gdrv::CreatePreview(gdrv_bitmap8& bmp)
 	if (bmp.Texture)
 		return;
 
-	bmp.CreateTexture("nearest", SDL_TEXTUREACCESS_STATIC);
+	bmp.CreateTexture(SDL_SCALEMODE_NEAREST, SDL_TEXTUREACCESS_STATIC);
 	SDL_UpdateTexture(bmp.Texture, nullptr, bmp.BmpBufPtr1, bmp.Width * 4);
 }

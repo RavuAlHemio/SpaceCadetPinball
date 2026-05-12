@@ -139,7 +139,7 @@ void render::uninit()
 
 void render::recreate_screen_texture()
 {
-	vscreen->CreateTexture(options::Options.LinearFiltering ? "linear" : "nearest", SDL_TEXTUREACCESS_STREAMING);
+	vscreen->CreateTexture(options::Options.LinearFiltering ? SDL_SCALEMODE_LINEAR : SDL_SCALEMODE_NEAREST, SDL_TEXTUREACCESS_STREAMING);
 }
 
 void render::update()
